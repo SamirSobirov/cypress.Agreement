@@ -78,7 +78,7 @@ jobs:
           message: |
             ${{ github.event_name == 'schedule' && '📢 **Hourly Monitoring**' || '👤 **Manual Testing**' }}
 
-            📂 **Module:** Agreement Lifecycle
+            📂 **Module:** Dogovor Monitoring
             📊 **Status:** ${{ env.FINAL_STATUS }}
 
             **Flow Steps:**
