@@ -1,0 +1,88 @@
+name: Agreement Lifecycle
+
+on:
+  schedule:
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+    inputs:
+      user_chat_id:
+        description: 'ID чата для личного ответа'
+        required: false
+        default: ''
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          # Полный сценарий: Провайдер -> Договор (А) -> Принятие (Б) -> Пополнение (А)
+          spec: cypress/e2e/monitoring/agreement.cy.js
+          browser: chrome
+        env:
+          CYPRESS_LOGIN_EMAIL: ${{ secrets.LOGIN_EMAIL }}
+          CYPRESS_LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
+
+      - name: Parse Diagnostic Data
+        if: always()
+        run: |
+          if [ -f auth_api_status.txt ]; then
+            RESULT=$(cat auth_api_status.txt | tr -d '[:space:]')
+          else
+            RESULT="UNKNOWN"
+          fi
+
+          # 1 - Провайдер | 2 - Договор (А) | 3 - Принятие (Б) | 4 - Пополнение (А)
+          S1="⏳"; S2="⏳"; S3="⏳"; S4="⏳"; STATUS="🔴 Failed"
+
+          case "$RESULT" in
+            "0") S1="❌"; STATUS="❌ Failed at Create Provider" ;;
+            "1") S1="✅"; S2="❌"; STATUS="⚠️ Failed at Create Contract (A)" ;;
+            "2") S1="✅"; S2="✅"; S3="❌"; STATUS="⚠️ Failed at Accept Contract (B)" ;;
+            "3") S1="✅"; S2="✅"; S3="✅"; S4="❌"; STATUS="⚠️ Failed at Top Up Balance (A)" ;;
+            "4") S1="✅"; S2="✅"; S3="✅"; S4="✅"; STATUS="🟢 Success" ;;
+            ERROR_*) S1="🆘 ${RESULT}"; STATUS="🔴 Auth API Error" ;;
+            *) STATUS="❌ Unknown Failure / File Missing" ;;
+          esac
+
+          echo "S1=$S1" >> $GITHUB_ENV
+          echo "S2=$S2" >> $GITHUB_ENV
+          echo "S3=$S3" >> $GITHUB_ENV
+          echo "S4=$S4" >> $GITHUB_ENV
+          echo "FINAL_STATUS=$STATUS" >> $GITHUB_ENV
+
+      - name: Upload Cypress Screenshots & Videos
+        uses: actions/upload-artifact@v4
+        if: failure() || always()
+        with:
+          name: cypress-artifacts
+          path: |
+            cypress/screenshots/
+            cypress/videos/
+          if-no-files-found: ignore
+
+      - name: Send Telegram Notification
+        if: always()
+        uses: appleboy/telegram-action@master
+        with:
+          to: >-
+            ${{ (github.event.inputs.user_chat_id != '') &&
+            github.event.inputs.user_chat_id ||
+            secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            ${{ github.event_name == 'schedule' && '📢 **Hourly Monitoring**' || '👤 **Manual Testing**' }}
+
+            📂 **Module:** Agreement Lifecycle
+            📊 **Status:** ${{ env.FINAL_STATUS }}
+
+            **Flow Steps:**
+            1. Создаёт провайдер: ${{ env.S1 }}
+            2. Создать Договор (кабинет А): ${{ env.S2 }}
+            3. Принимает договор (кабинет Б): ${{ env.S3 }}
+            4. Пополняет баланс (кабинет А): ${{ env.S4 }}
