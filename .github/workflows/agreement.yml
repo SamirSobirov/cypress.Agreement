@@ -2,7 +2,7 @@ name: Dogovor Monitoring
 
 on:
   schedule:
-    - cron: '0 */2 * * *'
+    - cron: '0 */5 * * *'
   workflow_dispatch:
     inputs:
       user_chat_id:
