@@ -81,8 +81,8 @@ jobs:
             📂 **Module:** Dogovor Monitoring
             📊 **Status:** ${{ env.FINAL_STATUS }}
 
-            **Этапы теста:**
-            1. Создание провайдера (кабинет А): ${{ env.S1 }}
-            2. Создание договора (кабинет А): ${{ env.S2 }}
-            3. Принятие договора (кабинет Б): ${{ env.S3 }}
-            4. Пополнение баланса (кабинет А): ${{ env.S4 }}
+            **Flow Steps:**
+            1. Create provider (А): ${{ env.S1 }}
+            2. Create agreement (A): ${{ env.S2 }}
+            3. Accept agreement (B): ${{ env.S3 }}
+            4. Top up balance (A): ${{ env.S4 }}
