@@ -1,4 +1,4 @@
-name: Agreement Lifecycle
+name: Dogovor Monitoring
 
 on:
   schedule:
