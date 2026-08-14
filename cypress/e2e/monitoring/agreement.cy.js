@@ -407,7 +407,54 @@ describe('Full Contract Lifecycle E2E (Провайдер -> Договор -> �
     // Модалка должна закрыться
     cy.get('.p-dialog').should('not.exist');
 
-    cy.log('✅ Баланс договора пополнен! Сценарий завершён.');
+    cy.log('✅ Баланс договора пополнен!');
     cy.writeFile('auth_api_status.txt', '4');
+
+    // =========================================================================
+    // ШАГ 5: УДАЛЕНИЕ СОЗДАННОГО ПРОВАЙДЕРА (кабинет A)
+    // =========================================================================
+    cy.log('🟢 ШАГ 5: Переход в раздел Провайдеры');
+    cy.contains('.sidebar-link', /Провайдеры|Providers/i, { timeout: 25000 })
+      .scrollIntoView()
+      .click();
+    cy.url({ timeout: 20000 }).should('include', '/partners');
+
+    // Список провайдеров подгружается с сервера — дожидаемся строки avia
+    // и даём таблице устаканиться, чтобы элемент не отвалился при клике.
+    cy.log('⚠️ Открываем детали провайдера avia');
+    cy.contains('tr', providerName, { timeout: 20000 }).should('exist');
+    cy.wait(500);
+    // Кнопка-иконка в строке открывает детали провайдера
+    cy.contains('tr', providerName).find('button.action-btn').first().click({ force: true });
+    cy.url({ timeout: 20000 }).should('match', /\/partners\/\d+/);
+
+    // На странице деталей жмём "Настройки" (вторичная кнопка на странице,
+    // а не пункт "Настройки" в сайдбаре — поэтому ограничиваем классом).
+    cy.log('⚠️ Переход в Настройки провайдера');
+    cy.contains('button.app-button--secondary', /Настройки|Settings/i, { timeout: 20000 })
+      .should('be.visible')
+      .and('not.be.disabled')
+      .click({ force: true });
+
+    // На странице настроек жмём "Удалить" (вторичная кнопка, не danger)
+    cy.log('⚠️ Инициируем удаление провайдера');
+    cy.contains('button.app-button--secondary', /Удалить|Delete/i, { timeout: 20000 })
+      .should('be.visible')
+      .and('not.be.disabled')
+      .click({ force: true });
+
+    // Подтверждаем удаление в модалке (danger-кнопка "Удалить")
+    cy.log('⚠️ Подтверждаем удаление');
+    cy.get('.p-dialog', { timeout: 15000 }).should('be.visible');
+    cy.get('.p-dialog').contains('button.app-button--danger', /Удалить|Delete/i)
+      .should('be.visible')
+      .and('not.be.disabled')
+      .click({ force: true });
+
+    // Модалка должна закрыться
+    cy.get('.p-dialog').should('not.exist');
+
+    cy.log('✅ Провайдер удалён! Сценарий полностью завершён.');
+    cy.writeFile('auth_api_status.txt', '5');
   });
 });

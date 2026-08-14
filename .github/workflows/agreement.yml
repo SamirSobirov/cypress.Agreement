@@ -36,15 +36,16 @@ jobs:
             RESULT="UNKNOWN"
           fi
 
-          # 1 - Провайдер | 2 - Договор (А) | 3 - Принятие (Б) | 4 - Пополнение (А)
-          S1="⏳"; S2="⏳"; S3="⏳"; S4="⏳"; STATUS="🔴 Failed"
+          # 1 - Провайдер | 2 - Договор (А) | 3 - Принятие (Б) | 4 - Пополнение (А) | 5 - Удаление (А)
+          S1="⏳"; S2="⏳"; S3="⏳"; S4="⏳"; S5="⏳"; STATUS="🔴 Failed"
 
           case "$RESULT" in
             "0") S1="❌"; STATUS="❌ Failed at Create Provider" ;;
             "1") S1="✅"; S2="❌"; STATUS="⚠️ Failed at Create Contract (A)" ;;
             "2") S1="✅"; S2="✅"; S3="❌"; STATUS="⚠️ Failed at Accept Contract (B)" ;;
             "3") S1="✅"; S2="✅"; S3="✅"; S4="❌"; STATUS="⚠️ Failed at Top Up Balance (A)" ;;
-            "4") S1="✅"; S2="✅"; S3="✅"; S4="✅"; STATUS="🟢 Success" ;;
+            "4") S1="✅"; S2="✅"; S3="✅"; S4="✅"; S5="❌"; STATUS="⚠️ Failed at Delete Provider (A)" ;;
+            "5") S1="✅"; S2="✅"; S3="✅"; S4="✅"; S5="✅"; STATUS="🟢 Success" ;;
             ERROR_*) S1="🆘 ${RESULT}"; STATUS="🔴 Auth API Error" ;;
             *) STATUS="❌ Unknown Failure / File Missing" ;;
           esac
@@ -53,6 +54,7 @@ jobs:
           echo "S2=$S2" >> $GITHUB_ENV
           echo "S3=$S3" >> $GITHUB_ENV
           echo "S4=$S4" >> $GITHUB_ENV
+          echo "S5=$S5" >> $GITHUB_ENV
           echo "FINAL_STATUS=$STATUS" >> $GITHUB_ENV
 
       - name: Upload Cypress Screenshots & Videos
@@ -82,7 +84,8 @@ jobs:
             📊 **Status:** ${{ env.FINAL_STATUS }}
 
             **Flow Steps:**
-            1. Create provider (А): ${{ env.S1 }}
+            1. Create provider (A): ${{ env.S1 }}
             2. Create agreement (A): ${{ env.S2 }}
             3. Accept agreement (B): ${{ env.S3 }}
             4. Top up balance (A): ${{ env.S4 }}
+            5. Delete provider (A): ${{ env.S5 }}
