@@ -120,11 +120,18 @@ describe('Full Contract Lifecycle E2E (Провайдер -> Договор -> �
       .type(providerName, { delay: 50 });
 
     // 2. Типы продуктов -> Перелеты
-    cy.contains('.p-select', /Выберите типы продуктов|Select product types/i)
+    // Список типов продуктов подгружается с сервера — при открытии дропдауна
+    // он может ещё грузиться ("Нет доступных вариантов"). Открываем список и
+    // ищем опцию "Перелеты" напрямую с длинным таймаутом: cy.contains
+    // переспрашивает DOM на каждой попытке, поэтому дождётся подгрузки вариантов.
+    cy.contains('.p-select', /Выберите типы продуктов|Select product types/i, { timeout: 20000 })
       .should('be.visible')
       .click();
-    cy.get('.p-select-panel, .p-select-overlay, [role="listbox"]')
-      .contains(/Перел[её]ты|Flights/i)
+    cy.contains(
+      '.p-select-overlay .p-select-option, .p-select-panel li, [role="option"]',
+      /Перел[её]ты|Flights/i,
+      { timeout: 30000 },
+    )
       .should('be.visible')
       .click();
 
@@ -168,17 +175,16 @@ describe('Full Contract Lifecycle E2E (Провайдер -> Договор -> �
       .should('be.visible')
       .click();
 
-    // В оверлее — полный список валют ISO с полем поиска. Вводим "UZS" в фильтр
-    // (если он есть), затем кликаем по отфильтрованной опции.
-    cy.get('.p-select-overlay, .p-select-panel', { timeout: 10000 }).should('be.visible');
+    // В оверлее — полный список валют ISO с полем поиска (грузится с сервера).
+    // Вводим "UZS" в фильтр (если он есть), затем кликаем по отфильтрованной опции.
+    cy.get('.p-select-overlay, .p-select-panel', { timeout: 20000 }).should('be.visible');
     cy.get('.p-select-overlay, .p-select-panel').then(($panel) => {
       const $filter = $panel.find('input');
       if ($filter.length) {
         cy.wrap($filter.first()).should('be.visible').clear().type('UZS');
       }
     });
-    cy.get('.p-select-overlay, .p-select-panel')
-      .contains('li.p-select-option, [role="option"]', /UZS/)
+    cy.contains('.p-select-overlay li.p-select-option, .p-select-panel li, [role="option"]', /UZS/, { timeout: 20000 })
       .should('be.visible')
       .click();
 
